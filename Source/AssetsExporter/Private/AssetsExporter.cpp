@@ -5,9 +5,10 @@
 #include "AssetsExporterCommands.h"
 #include "AssetToolsModule.h"
 #include "IAssetTools.h"
-#include "Misc/MessageDialog.h"
 #include "ToolMenus.h"
 #include "AssetRegistry/AssetRegistryModule.h"
+#include "DesktopPlatformModule.h"
+#include "EditorDirectories.h"
 
 static const FName AssetsExporterTabName("AssetsExporter");
 
@@ -48,10 +49,25 @@ void FAssetsExporterModule::ShutdownModule()
 
 void FAssetsExporterModule::PluginButtonClicked()
 {
+	FDesktopPlatformModule& DesktopPlatformModule = FModuleManager::LoadModuleChecked<FDesktopPlatformModule>(TEXT("DesktopPlatform"));
+    IDesktopPlatform* DesktopPlatform = DesktopPlatformModule.Get();
+	if (!ensure(DesktopPlatform != nullptr)) return;
+	FString FolderName;
+	const FString Title = NSLOCTEXT("UnrealEd", "ChooseADirectory", "Choose A Directory").ToString();
+	const bool bFolderSelected = DesktopPlatform->OpenDirectoryDialog(
+		FSlateApplication::Get().FindBestParentWindowHandleForDialogs(nullptr),
+		Title,
+		FEditorDirectories::Get().GetLastDirectory(ELastDirectory::GENERIC_EXPORT),
+		FolderName
+	);
+
+	if (!bFolderSelected)
+	{
+		return;
+	}
+	
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
-
 	IAssetRegistry& AssetRegistry = AssetRegistryModule.GetRegistry();
-
 	TArray<FAssetData> ObjectList;
 	AssetRegistry.GetAllAssets(ObjectList, true);
 	TArray<FString> AssetsToExport;
@@ -65,7 +81,7 @@ void FAssetsExporterModule::PluginButtonClicked()
 	}
 
 	IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
-	AssetTools.ExportAssets(AssetsToExport, "D:/");
+	AssetTools.ExportAssets(AssetsToExport, FolderName);
 }
 
 void FAssetsExporterModule::RegisterMenus()

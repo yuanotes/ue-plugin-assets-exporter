@@ -44,7 +44,8 @@ public class AssetsExporter : ModuleRules
 				"Slate",
 				"SlateCore",
 				"AssetRegistry",
-				"AssetTools"
+				"AssetTools",
+				"DesktopPlatform"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
